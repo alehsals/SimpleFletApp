@@ -7,26 +7,30 @@ def main(page: ft.Page):
 
     testo_esito = ft.Text("Nessun file selezionato", size=16)
 
-    def al_selezionare_file(e: ft.FilePickerResultEvent):
-        if e.files and len(e.files) > 0:
-            testo_esito.value = f"Selezionato: {e.files[0].name}"
+    # In Flet 1.0 l'handler è asincrono per attendere l'esito di pick_files()
+    async def al_selezionare_file(e: ft.Event[ft.Button]):
+        files = await picker.pick_files()
+        if files:
+            testo_esito.value = f"Selezionato: {files[0].name}"
             testo_esito.color = ft.Colors.GREEN
         else:
             testo_esito.value = "Selezione annullata"
             testo_esito.color = ft.Colors.ORANGE
         page.update()
 
-    # Inizializzazione e registrazione in page.overlay
-    picker = ft.FilePicker(on_result=al_selezionare_file)
-    page.overlay.append(picker)
+    # 1. Inizializzazione come Service
+    picker = ft.FilePicker()
+    
+    # 2. Registrazione in page.services (NON page.overlay)
+    page.services.append(picker)
 
     page.add(
         ft.Column(
             [
                 ft.Button(
-                    "Scegli un file",
+                    content="Scegli un file",
                     icon=ft.Icons.FOLDER_OPEN,
-                    on_click=lambda _: picker.pick_files(),
+                    on_click=al_selezionare_file,
                 ),
                 testo_esito,
             ],
